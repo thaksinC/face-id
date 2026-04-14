@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เข้าสู่ระบบ - สิงห์บุรีคอนเนค</title>
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --primary: #1a73e8;
+    --primary-dark: #1557b0;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --toggle-off: #d1d5db;
+    --toggle-on: #1a73e8;
+    --radius: 16px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.10);
+  }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 420px;
+    padding: 36px 32px 32px;
+    animation: fadeUp 0.4s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .logo {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .logo h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+  .logo p {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .toggle-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    transition: color 0.2s;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle-label.active { color: var(--primary); font-weight: 600; }
+
+  .ios-toggle {
+    position: relative;
+    width: 52px;
+    height: 30px;
+    background: var(--toggle-off);
+    border-radius: 15px;
+    cursor: pointer;
+    transition: background 0.3s;
+    flex-shrink: 0;
+  }
+  .ios-toggle.on { background: var(--toggle-on); }
+  .ios-toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 24px;
+    height: 24px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+  }
+  .ios-toggle.on::after { transform: translateX(22px); }
+
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeIn .3s ease; }
+  @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+  .field input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus { border-color: var(--primary); }
+
+  .btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 4px;
+  }
+  .btn-primary {
+    background: var(--primary);
+    color: white;
+  }
+  .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+  .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; transform: none; }
+  .btn-secondary {
+    background: transparent;
+    color: var(--primary);
+    border: 1.5px solid var(--primary);
+    margin-top: 10px;
+  }
+  .btn-secondary:hover { background: #eff6ff; }
+  .btn-sm {
+    padding: 8px 16px;
+    font-size: 13px;
+    width: auto;
+    border-radius: 8px;
+    margin-top: 0;
+  }
+
+  .err-msg {
+    color: var(--danger);
+    font-size: 13px;
+    margin-top: 10px;
+    text-align: center;
+    min-height: 18px;
+  }
+
+  .cam-area {
+    position: relative;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    width: 100%;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cam-area video, .cam-area canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .cam-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 8px 12px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.6));
+    color: white;
+    font-size: 13px;
+    text-align: center;
+    z-index: 5;
+  }
+  .face-box {
+    position: absolute;
+    border: 2.5px solid #4ade80;
+    border-radius: 4px;
+    z-index: 4;
+    transition: all 0.1s;
+  }
+  .blink-bar {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+  .blink-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .blink-dot.lit { background: var(--primary); }
+
+  .cam-status {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    min-height: 20px;
+  }
+
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .overlay.show { display: flex; animation: fadeIn .2s; }
+  .popup {
+    background: white;
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .popup h3 { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .popup p  { font-size: 14px; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+  .popup-actions { display: flex; gap: 10px; margin-top: 8px; }
+
+  .toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%) scale(0.9);
+    background: white;
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+    min-width: 260px;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); pointer-events: auto; }
+  .toast-icon { font-size: 36px; margin-bottom: 10px; }
+  .toast h3 { font-size: 16px; font-weight: 700; color: var(--text); }
+  .toast p  { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+  .reg-cam-wrap { width: 100%; }
+  .reg-cam-area {
+    position: relative;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .reg-cam-area video, .reg-cam-area canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .reg-preview-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .reg-preview-slot {
+    flex: 1;
+    text-align: center;
+  }
+  .reg-preview-slot img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: #f3f4f6;
+  }
+  .reg-preview-slot span {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .reg-capture-hint {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+
+  .info-box {
+    background: #eff6ff;
+    border-left: 3px solid var(--primary);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #1e40af;
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+
+  .warn-box {
+    background: #fef9c3;
+    border-left: 3px solid #ca8a04;
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #713f12;
+    line-height: 1.6;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 20px; height: 20px;
+    border: 2.5px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="card" id="mainCard">
+  <div class="logo">
+    <h1>สิงห์บุรีคอนเนค</h1>
+    <p>เข้าสู่ระบบเพื่อดำเนินการต่อ</p>
+  </div>
+
+  <div class="toggle-wrap">
+    <span class="toggle-label active" id="lbl1" onclick="setMode(false)">รหัสบัตร</span>
+    <div class="ios-toggle" id="toggle" onclick="toggleMode()"></div>
+    <span class="toggle-label" id="lbl2" onclick="setMode(true)">ใบหน้า</span>
+  </div>
+
+  <div class="panel active" id="panel1">
+    <div class="field">
+      <label>เลขบัตรประชาชน 13 หลัก</label>
+      <input type="text" id="idInput" maxlength="13" inputmode="numeric" placeholder="x-xxxx-xxxxx-xx-x">
+    </div>
+    <div class="field">
+      <label>เบอร์โทรศัพท์</label>
+      <input type="text" id="phoneInput" maxlength="10" inputmode="tel" placeholder="0xxxxxxxxx">
+    </div>
+    <button class="btn btn-primary" onclick="doIdLogin()">เข้าสู่ระบบ</button>
+    <div class="err-msg" id="err1"></div>
+  </div>
+
+  <div class="panel" id="panel2">
+    <div class="cam-area" id="camArea">
+      <video id="camVideo" autoplay muted playsinline></video>
+      <canvas id="camCanvas"></canvas>
+      <div id="faceBoxEl" class="face-box" style="display:none"></div>
+      <div class="cam-overlay" id="camHint">กำลังโหลดโมเดล...</div>
+    </div>
+    <div class="blink-bar">
+      <div class="blink-dot" id="bd0"></div>
+      <div class="blink-dot" id="bd1"></div>
+    </div>
+    <div class="cam-status" id="camStatus">กรุณากระพริบตา 2 ครั้งเพื่อเริ่มสแกน</div>
+    <div class="err-msg" id="err2"></div>
+    <div class="divider"></div>
+    <button class="btn btn-secondary" onclick="openRegPopup()">ลงทะเบียนใบหน้า (Facial Login)</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <div class="toast-icon">✅</div>
+  <h3 id="toastTitle"></h3>
+  <p id="toastBody"></p>
+</div>
+
+<div class="overlay" id="popupNoFace">
+  <div class="popup">
+    <h3>⚠️ ไม่พบผู้ใช้</h3>
+    <p>ไม่พบข้อมูลใบหน้าของท่านในระบบ กรุณาลงทะเบียนเพื่อใช้งาน Facial Login</p>
+    <div class="popup-actions">
+      <button class="btn btn-secondary btn-sm" onclick="closeOverlay('popupNoFace')">ปิด</button>
+      <button class="btn btn-primary btn-sm" onclick="closeOverlay('popupNoFace');openRegPopup()">ลงทะเบียนใบหน้า</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="popupFaceMatch">
+  <div class="popup">
+    <h3>🔍 พบใบหน้า</h3>
+    <p id="faceMatchMsg"></p>
+    <div class="popup-actions">
+      <button class="btn btn-secondary btn-sm" onclick="cancelFaceLogin()">ยกเลิก</button>
+      <button class="btn btn-primary btn-sm" id="confirmFaceBtn" onclick="confirmFaceLogin()">ยืนยันเข้าสู่ระบบ</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="popupReg">
+  <div class="popup" id="popupRegContent">
+    <div id="regStep1">
+      <h3>🪪 ลงทะเบียนใบหน้า</h3>
+      <p>กรุณายืนยันตัวตนก่อนลงทะเบียน</p>
+      <div class="field">
+        <label>เลขบัตรประชาชน 13 หลัก</label>
+        <input type="text" id="regIdInput" maxlength="13" inputmode="numeric" placeholder="x-xxxx-xxxxx-xx-x">
+      </div>
+      <div class="field">
+        <label>เบอร์โทรศัพท์</label>
+        <input type="text" id="regPhoneInput" maxlength="10" inputmode="tel" placeholder="0xxxxxxxxx">
+      </div>
+      <div class="err-msg" id="regErr1"></div>
+      <div class="popup-actions">
+        <button class="btn btn-secondary btn-sm" onclick="closeOverlay('popupReg');resumeFaceScan()">ยกเลิก</button>
+        <button class="btn btn-primary btn-sm" onclick="verifyRegIdentity()">ถัดไป</button>
+      </div>
+    </div>
+
+    <div id="regStep2" style="display:none">
+      <h3>⚠️ เคยลงทะเบียนแล้ว</h3>
+      <div class="warn-box">ท่านเคยลงทะเบียนใบหน้าแล้ว แต่ประสบปัญหาด้วย Facial Login กรุณาลองใหม่ภายหลัง และท่านสามารถใช้การล็อกอินแบบปกติได้</div>
+      <div class="popup-actions" style="margin-top:16px">
+        <button class="btn btn-primary btn-sm" onclick="closeOverlay('popupReg');resumeFaceScan()">รับทราบ</button>
+      </div>
+    </div>
+
+    <div id="regStep3" style="display:none">
+      <h3 id="regWelcomeTitle"></h3>
+      <div class="info-box">
+        ระบบจะถ่ายรูปใบหน้าของท่าน <strong>3 รูป</strong> เพื่อใช้ในการจดจำใบหน้า:<br>
+        📸 รูปที่ 1 — หน้าตรง<br>
+        📸 รูปที่ 2 — หันซ้าย 45°<br>
+        📸 รูปที่ 3 — หันขวา 45°
+      </div>
+      <div class="popup-actions">
+        <button class="btn btn-secondary btn-sm" onclick="closeOverlay('popupReg');resumeFaceScan()">ยกเลิก</button>
+        <button class="btn btn-primary btn-sm" onclick="startRegCapture()">เริ่มถ่ายรูป</button>
+      </div>
+    </div>
+
+    <div id="regStep4" style="display:none">
+      <h3>📷 ถ่ายรูปใบหน้า</h3>
+      <div class="reg-cam-area">
+        <video id="regVideo" autoplay muted playsinline></video>
+        <canvas id="regCamCanvas" style="display:none"></canvas>
+      </div>
+      <div class="reg-capture-hint" id="regCapHint">กด "ถ่ายรูป" เพื่อเริ่ม (1/3)</div>
+      <div class="reg-preview-row">
+        <div class="reg-preview-slot">
+          <img id="prev0" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+          <span>หน้าตรง</span>
+        </div>
+        <div class="reg-preview-slot">
+          <img id="prev1" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+          <span>หันซ้าย</span>
+        </div>
+        <div class="reg-preview-slot">
+          <img id="prev2" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+          <span>หันขวา</span>
+        </div>
+      </div>
+      <div class="err-msg" id="regCamErr"></div>
+      <div class="popup-actions">
+        <button class="btn btn-secondary btn-sm" onclick="cancelRegCapture()">ยกเลิก</button>
+        <button class="btn btn-primary btn-sm" id="regCaptureBtn" onclick="captureRegPhoto()">📸 ถ่ายรูป</button>
+        <button class="btn btn-primary btn-sm" id="regSaveBtn" style="display:none" onclick="saveRegistration()"><span class="spinner" style="display:none" id="saveSpinner"></span>บันทึก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== CONFIG ====================
+// *** IMPORTANT: เปลี่ยน URL นี้เป็น URL ที่ได้จากการ Deploy GAS ของคุณ ***
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxvecpKzaRDHup5gs2j3iJxsy7Tg3G_DQBu_4BL3bzATEcE4FaZz0hytuklqdfIOVnz/exec';
+
+// ==================== STATE ====================
+let faceMode = false;
+let camStream = null;
+let faceApiReady = false;
+let blinkCount = 0;
+let blinkLocked = false;
+let lastEAR = 1;
+let scanInterval = null;
+let detectionPaused = false;
+
+let matchedName = '';
+let matchedEmbedding = null;
+
+let regUserName = '';
+let regUserRow = 0;
+let regCapturedPhotos = [];
+let regCapturedEmbeddings = [];
+let regPhotoIndex = 0;
+let regStream = null;
+
+// ==================== GAS CALLER ====================
+async function callGAS(method, params) {
+  try {
+    const response = await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method, ...params })
+    });
+    
+    if (!response.ok) {
+      throw new Error('HTTP ' + response.status);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('callGAS error:', error);
+    throw new Error('ไม่สามารถเชื่อมต่อกับระบบ: ' + error.message);
+  }
+}
+
+// ==================== ID LOGIN ====================
+async function doIdLogin() {
+  const id = document.getElementById('idInput').value.replace(/\D/g,'');
+  const phone = document.getElementById('phoneInput').value.replace(/\D/g,'');
+  const err = document.getElementById('err1');
+  err.textContent = '';
+  
+  if (id.length !== 13) { err.textContent = 'กรุณากรอกเลขบัตรประชาชน 13 หลัก'; return; }
+  if (phone.length < 9) { err.textContent = 'กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง'; return; }
+
+  const btn = document.querySelector('#panel1 .btn-primary');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>กำลังตรวจสอบ...';
+
+  try {
+    const res = await callGAS('loginWithId', { idNumber: id, phone: phone });
+    btn.disabled = false;
+    btn.textContent = 'เข้าสู่ระบบ';
+    
+    if (res.success) {
+      showLoginToast(res.name, res.redirectUrl);
+    } else {
+      err.textContent = res.message;
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'เข้าสู่ระบบ';
+    err.textContent = 'เกิดข้อผิดพลาด: ' + e.message;
+  }
+}
+
+function showLoginToast(name, url) {
+  document.getElementById('toastTitle').textContent = 'ลงชื่อเข้าใช้ในนามของ ' + name;
+  document.getElementById('toastBody').textContent = 'กำลังนำท่านไปยังระบบ...';
+  document.getElementById('toast').classList.add('show');
+  setTimeout(() => { window.top.location.href = url; }, 2000);
+}
+
+// ==================== TOGGLE & CAMERA ====================
+function toggleMode() { setMode(!faceMode); }
+
+function setMode(toFace) {
+  faceMode = toFace;
+  document.getElementById('toggle').classList.toggle('on', toFace);
+  document.getElementById('lbl1').classList.toggle('active', !toFace);
+  document.getElementById('lbl2').classList.toggle('active', toFace);
+  document.getElementById('panel1').classList.toggle('active', !toFace);
+  document.getElementById('panel2').classList.toggle('active', toFace);
+  
+  if (toFace) {
+    startFaceMode();
+  } else {
+    stopCam();
+  }
+}
+
+function stopCam() {
+  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+}
+
+async function openCam(videoId) {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+    camStream = stream;
+    const video = document.getElementById(videoId);
+    video.srcObject = stream;
+    await new Promise(r => video.onloadedmetadata = r);
+    video.play();
+  } catch(e) {
+    document.getElementById('camHint').textContent = 'ไม่สามารถเปิดกล้องได้';
+  }
+}
+
+async function loadFaceApi() {
+  if (faceApiReady) return;
+  const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model';
+  try {
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    faceApiReady = true;
+  } catch(e) {
+    document.getElementById('camHint').textContent = 'โหลดโมเดลล้มเหลว';
+  }
+}
+
+async function startFaceMode() {
+  document.getElementById('camHint').textContent = 'กำลังโหลดโมเดล AI...';
+  document.getElementById('camStatus').textContent = 'กรุณารอสักครู่';
+  await loadFaceApi();
+  await openCam('camVideo');
+  blinkCount = 0; 
+  updateBlinkDots();
+  startScanLoop();
+}
+
+function startScanLoop() {
+  const video = document.getElementById('camVideo');
+  const faceBox = document.getElementById('faceBoxEl');
+  const hint = document.getElementById('camHint');
+  const status = document.getElementById('camStatus');
+
+  scanInterval = setInterval(async () => {
+    if (!faceApiReady || detectionPaused || !video.readyState || video.paused) return;
+
+    const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks(true)
+      .withFaceDescriptor();
+
+    if (!det) {
+      faceBox.style.display = 'none';
+      hint.textContent = 'ไม่พบใบหน้า กรุณาหันหน้าเข้ากล้อง';
+      status.textContent = 'กรุณากระพริบตา ' + (2 - blinkCount) + ' ครั้งเพื่อเริ่มสแกน';
+      return;
+    }
+
+    const { x, y, width, height } = det.detection.box;
+    const vw = video.offsetWidth, vh = video.offsetHeight;
+    const scaleX = vw / (video.videoWidth || 640);
+    const scaleY = vh / (video.videoHeight || 480);
+    faceBox.style.display = 'block';
+    faceBox.style.left = (x * scaleX) + 'px';
+    faceBox.style.top = (y * scaleY) + 'px';
+    faceBox.style.width = (width * scaleX) + 'px';
+    faceBox.style.height = (height * scaleY) + 'px';
+
+    hint.textContent = 'พบใบหน้า ✓';
+
+    if (blinkCount < 2) {
+      const lm = det.landmarks;
+      const ear = calcEAR(lm);
+      if (lastEAR > 0.25 && ear < 0.25 && !blinkLocked) {
+        blinkLocked = true;
+        blinkCount = Math.min(2, blinkCount + 1);
+        updateBlinkDots();
+        status.textContent = 'กระพริบตา ' + blinkCount + '/2';
+        setTimeout(() => { blinkLocked = false; }, 400);
+      }
+      lastEAR = ear;
+      return;
+    }
+
+    detectionPaused = true;
+    status.textContent = 'กำลังสแกนใบหน้า...';
+    hint.textContent = '🔍 สแกนแล้ว';
+
+    const embedding = Array.from(det.descriptor);
+    matchedEmbedding = embedding;
+    await triggerFaceLogin(embedding);
+  }, 200);
+}
+
+function calcEAR(lm) {
+  const pts = lm.positions;
+  const ear1 = eyeAspectRatio(pts.slice(36,42));
+  const ear2 = eyeAspectRatio(pts.slice(42,48));
+  return (ear1 + ear2) / 2;
+}
+
+function eyeAspectRatio(p) {
+  const d1 = dist(p[1], p[5]);
+  const d2 = dist(p[2], p[4]);
+  const d3 = dist(p[0], p[3]);
+  return (d1 + d2) / (2 * d3 + 1e-6);
+}
+
+function dist(a, b) {
+  return Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2);
+}
+
+function updateBlinkDots() {
+  for (let i = 0; i < 2; i++) {
+    document.getElementById('bd'+i).classList.toggle('lit', i < blinkCount);
+  }
+}
+
+async function triggerFaceLogin(embedding) {
+  try {
+    const res = await callGAS('loginWithFace', { embeddingJson: JSON.stringify(embedding) });
+    if (res.success) {
+      matchedName = res.name;
+      document.getElementById('faceMatchMsg').innerHTML = 'ระบบพบใบหน้าของ "' + res.name + '" กรุณายืนยันเพื่อเข้าสู่ระบบ';
+      document.getElementById('confirmFaceBtn').dataset.url = res.redirectUrl;
+      showOverlay('popupFaceMatch');
+    } else {
+      showOverlay('popupNoFace');
+    }
+  } catch (e) {
+    detectionPaused = false;
+    blinkCount = 0; 
+    updateBlinkDots();
+    document.getElementById('err2').textContent = 'ข้อผิดพลาด: ' + e.message;
+  }
+}
+
+function confirmFaceLogin() {
+  const url = document.getElementById('confirmFaceBtn').dataset.url;
+  closeOverlay('popupFaceMatch');
+  showLoginToast(matchedName, url);
+}
+
+function cancelFaceLogin() {
+  closeOverlay('popupFaceMatch');
+  resumeFaceScan();
+}
+
+function resumeFaceScan() {
+  detectionPaused = false;
+  blinkCount = 0; 
+  updateBlinkDots();
+  document.getElementById('camStatus').textContent = 'กรุณากระพริบตา 2 ครั้งเพื่อเริ่มสแกน';
+  document.getElementById('err2').textContent = '';
+}
+
+// ==================== OVERLAY ====================
+function showOverlay(id) { document.getElementById(id).classList.add('show'); }
+function closeOverlay(id) { document.getElementById(id).classList.remove('show'); }
+
+// ==================== REGISTRATION ====================
+function openRegPopup() {
+  detectionPaused = true;
+  resetRegSteps();
+  showOverlay('popupReg');
+}
+
+function resetRegSteps() {
+  document.getElementById('regStep1').style.display = 'block';
+  document.getElementById('regStep2').style.display = 'none';
+  document.getElementById('regStep3').style.display = 'none';
+  document.getElementById('regStep4').style.display = 'none';
+  document.getElementById('regIdInput').value = '';
+  document.getElementById('regPhoneInput').value = '';
+  document.getElementById('regErr1').textContent = '';
+  regCapturedPhotos = [];
+  regCapturedEmbeddings = [];
+  regPhotoIndex = 0;
+}
+
+async function verifyRegIdentity() {
+  const id = document.getElementById('regIdInput').value.replace(/\D/g,'');
+  const phone = document.getElementById('regPhoneInput').value.replace(/\D/g,'');
+  const err = document.getElementById('regErr1');
+  err.textContent = '';
+  
+  if (id.length !== 13) { err.textContent = 'กรุณากรอกเลขบัตรประชาชน 13 หลัก'; return; }
+  if (phone.length < 9) { err.textContent = 'กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง'; return; }
+
+  try {
+    const res = await callGAS('verifyForRegistration', { idNumber: id, phone: phone });
+    if (res.success) {
+      regUserName = res.name;
+      regUserRow = res.row;
+      if (res.hasEmbedding) {
+        document.getElementById('regStep1').style.display = 'none';
+        document.getElementById('regStep2').style.display = 'block';
+      } else {
+        document.getElementById('regWelcomeTitle').innerHTML = '👋 ท่านกำลังลงทะเบียนใบหน้าในนามของ ' + res.name;
+        document.getElementById('regStep1').style.display = 'none';
+        document.getElementById('regStep3').style.display = 'block';
+      }
+    } else {
+      err.textContent = res.message;
+    }
+  } catch (e) {
+    err.textContent = 'ข้อผิดพลาด: ' + e.message;
+  }
+}
+
+async function startRegCapture() {
+  document.getElementById('regStep3').style.display = 'none';
+  document.getElementById('regStep4').style.display = 'block';
+  regPhotoIndex = 0;
+  regCapturedPhotos = [];
+  regCapturedEmbeddings = [];
+  updateRegHint();
+  
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+    regStream = stream;
+    const v = document.getElementById('regVideo');
+    v.srcObject = stream;
+    await new Promise(r => v.onloadedmetadata = r);
+    v.play();
+  } catch(e) {
+    document.getElementById('regCamErr').textContent = 'ไม่สามารถเปิดกล้องได้';
+  }
+}
+
+function updateRegHint() {
+  const labels = ['หน้าตรง', 'หันซ้าย 45°', 'หันขวา 45°'];
+  if (regPhotoIndex < 3) {
+    document.getElementById('regCapHint').textContent = 'ท่าที่ ' + (regPhotoIndex+1) + ': ' + labels[regPhotoIndex] + ' (' + (regPhotoIndex+1) + '/3)';
+    document.getElementById('regCaptureBtn').style.display = '';
+    document.getElementById('regSaveBtn').style.display = 'none';
+  } else {
+    document.getElementById('regCapHint').textContent = 'ถ่ายครบแล้ว กดบันทึกเพื่อเสร็จสิ้น';
+    document.getElementById('regCaptureBtn').style.display = 'none';
+    document.getElementById('regSaveBtn').style.display = '';
+  }
+}
+
+async function captureRegPhoto() {
+  const video = document.getElementById('regVideo');
+  const canvas = document.getElementById('regCamCanvas');
+  const err = document.getElementById('regCamErr');
+  err.textContent = '';
+
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  if (!faceApiReady) { 
+    err.textContent = 'โมเดลยังไม่พร้อม'; 
+    return; 
+  }
+  
+  const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+    .withFaceLandmarks(true).withFaceDescriptor();
+
+  if (!det) { 
+    err.textContent = 'ไม่พบใบหน้า กรุณาปรับท่าทางและลองใหม่'; 
+    return; 
+  }
+
+  const embedding = Array.from(det.descriptor);
+  regCapturedEmbeddings.push(embedding);
+
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  regCapturedPhotos.push(dataUrl);
+  document.getElementById('prev' + regPhotoIndex).src = dataUrl;
+  regPhotoIndex++;
+  updateRegHint();
+}
+
+function cancelRegCapture() {
+  stopRegCam();
+  closeOverlay('popupReg');
+  resumeFaceScan();
+}
+
+function stopRegCam() {
+  if (regStream) { regStream.getTracks().forEach(t => t.stop()); regStream = null; }
+}
+
+async function saveRegistration() {
+  if (regCapturedEmbeddings.length < 3) { 
+    document.getElementById('regCamErr').textContent = 'กรุณาถ่ายรูปให้ครบ 3 รูป'; 
+    return; 
+  }
+  
+  document.getElementById('saveSpinner').style.display = 'inline-block';
+  document.getElementById('regSaveBtn').disabled = true;
+
+  try {
+    const res = await callGAS('saveFaceData', {
+      row: regUserRow,
+      name: regUserName,
+      emb1Json: JSON.stringify(regCapturedEmbeddings[0]),
+      emb2Json: JSON.stringify(regCapturedEmbeddings[1]),
+      emb3Json: JSON.stringify(regCapturedEmbeddings[2]),
+      img1Base64: regCapturedPhotos[0],
+      img2Base64: regCapturedPhotos[1],
+      img3Base64: regCapturedPhotos[2]
+    });
+
+    document.getElementById('saveSpinner').style.display = 'none';
+    document.getElementById('regSaveBtn').disabled = false;
+    stopRegCam();
+    closeOverlay('popupReg');
+    
+    if (res.success) {
+      setMode(true);
+      document.getElementById('camStatus').textContent = 'ลงทะเบียนสำเร็จ! กรุณากระพริบตา 2 ครั้ง';
+      blinkCount = 0; 
+      updateBlinkDots();
+      detectionPaused = false;
+    } else {
+      alert('เกิดข้อผิดพลาด: ' + res.message);
+      resumeFaceScan();
+    }
+  } catch (e) {
+    document.getElementById('saveSpinner').style.display = 'none';
+    document.getElementById('regSaveBtn').disabled = false;
+    document.getElementById('regCamErr').textContent = 'ข้อผิดพลาด: ' + e.message;
+  }
+}
+</script>
+</body>
+</html>
